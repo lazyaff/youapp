@@ -51,6 +51,7 @@ export default function Home() {
 
         const result = await response.json();
         if (result.access_token) {
+            document.cookie = `access_token=${result.access_token}; path=/;`;
             router.push("/profile");
         } else {
             window.alert(result.message);
