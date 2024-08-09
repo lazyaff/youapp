@@ -5,20 +5,43 @@ import { About } from "@/components/fragments/About";
 import { Cover } from "@/components/fragments/Cover";
 import { Interest } from "@/components/fragments/Interest";
 import { getAccessToken } from "@/helper/token";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Profile() {
-    const token = getAccessToken();
+    const token = getAccessToken() || "";
+    const [userData, setUserData] = useState<any>({});
 
     useEffect(() => {
-        setTimeout(() => {
-            console.clear();
-        }, 2000);
+        if (token) {
+            fetchData();
+        }
     }, []);
 
     const logout = () => {
         document.cookie = "access_token=; path=/;";
         window.location.href = "/";
+    };
+
+    // fetch profile
+    const fetchData = async () => {
+        try {
+            const response = await fetch(
+                process.env.NEXT_PUBLIC_API_URL + `/getProfile`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-access-token": token,
+                    },
+                    cache: "no-store",
+                }
+            );
+
+            const result = await response.json();
+            setUserData(result.data);
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     return (
@@ -28,15 +51,14 @@ export default function Profile() {
                     <Back onClick={logout} />
                 </div>
                 <div className="text-center">
-                    {/* {userStore.username ? `@${userStore.username}` : ""} */}
-                    @username
+                    {userData.username ? `@${userData.username}` : ""}
                 </div>
                 <span />
             </div>
             <div className="space-y-5 px-2 pt-6 pb-10">
                 <Cover />
                 <About />
-                <Interest />
+                <Interest data={userData.interests || []} />
             </div>
         </main>
     );
