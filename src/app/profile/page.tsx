@@ -9,7 +9,18 @@ import { useEffect, useState } from "react";
 
 export default function Profile() {
     const token = getAccessToken() || "";
-    const [userData, setUserData] = useState<any>({});
+    const [userData, setUserData] = useState({
+        username: "",
+        name: "",
+        age: 0,
+        gender: "Male",
+        birthday: "",
+        horoscope: "",
+        zodiac: "",
+        height: "",
+        weight: "",
+        interests: [],
+    });
 
     useEffect(() => {
         if (token) {
@@ -21,6 +32,37 @@ export default function Profile() {
         document.cookie = "access_token=; path=/;";
         window.location.href = "/";
     };
+
+    // set horoscope, zodiac, and age
+    const setHoroscope = () => {
+        if (!userData.birthday && userData.horoscope !== "") {
+            setUserData((prevData) => ({
+                ...prevData,
+                horoscope: "",
+                zodiac: "",
+                age: 0,
+            }));
+        } else if (userData.birthday && userData.age === 0) {
+            const today = new Date();
+            const birthDate = new Date(userData.birthday);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const month = today.getMonth() - birthDate.getMonth();
+            if (
+                month < 0 ||
+                (month === 0 && today.getDate() < birthDate.getDate())
+            ) {
+                age--;
+            }
+            setUserData((prevData) => ({
+                ...prevData,
+                age,
+            }));
+        }
+    };
+
+    useEffect(() => {
+        setHoroscope();
+    }, [userData]);
 
     // fetch profile
     const fetchData = async () => {
@@ -38,9 +80,16 @@ export default function Profile() {
             );
 
             const result = await response.json();
-            setUserData(result.data);
+            if (response.ok) {
+                setUserData((prevData) => ({
+                    ...prevData,
+                    ...result.data,
+                }));
+            } else {
+                logout();
+            }
         } catch (error) {
-            console.log(error);
+            logout();
         }
     };
 
@@ -56,8 +105,13 @@ export default function Profile() {
                 <span />
             </div>
             <div className="space-y-5 px-2 pt-6 pb-10">
-                <Cover />
-                <About />
+                <Cover data={userData} />
+                <About
+                    data={userData}
+                    onClick={() => {
+                        fetchData();
+                    }}
+                />
                 <Interest data={userData.interests || []} />
             </div>
         </main>
